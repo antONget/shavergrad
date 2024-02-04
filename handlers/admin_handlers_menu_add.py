@@ -56,12 +56,18 @@ async def get_picture_dish(message: Message, state: FSMContext) -> None:
     await state.set_state(Dish_add.add_cost_dish)
 
 
-@router.message(F.text, StateFilter(Dish_add.add_cost_dish))
+@router.message(F.text, StateFilter(Dish_add.add_cost_dish), lambda x: x.text.isdigit() and int(x.text) > 0)
 async def get_cost_dish(message: Message, state: FSMContext) -> None:
     logging.info(f'get_cost_dish: {message.chat.id}')
     await state.update_data(add_cost_dish=int(message.text))
     await message.answer(text=f'Пришлите категорию блюда')
     await state.set_state(Dish_add.add_category_dish)
+
+
+@router.message(F.text, StateFilter(Dish_add.add_cost_dish))
+async def get_cost_dish(message: Message, state: FSMContext) -> None:
+    logging.info(f'get_cost_dish: {message.chat.id}')
+    await message.answer(text=f'Повторите ввод, введено не корректное значение')
 
 
 @router.message(F.text, StateFilter(Dish_add.add_category_dish))

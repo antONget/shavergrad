@@ -160,6 +160,77 @@ def dalete_row_table_dish(id_dish):
         connection.close()
         # logging.info("[INFO] PostgreSQL connection closed")
 
+
+def insert_data_table_promotion(description, image, short_description):
+    logging.info(f'insert_data_table_promotion')
+    connection = connect_db(config)
+    if connection:
+        with connection.cursor() as cursor:
+            postgres_insert_query = """INSERT INTO promotion (description, image, short_description) VALUES (%s,%s,%s)"""
+            record_to_insert = (description, image, short_description)
+            cursor.execute(postgres_insert_query, record_to_insert)
+            # logging.info("[INFO] INSERT data successfuly")
+            connection.close()
+        # logging.info("[INFO] PostgreSQL connection closed")
+
+
+def select_all_data_table_promotion():
+    logging.info(f'select_all_data_table_promotion')
+    connection = connect_db(config)
+    try:
+        with connection.cursor() as cursor:
+            postgres_insert_query = """SELECT * FROM promotion"""
+            cursor.execute(postgres_insert_query)
+            return cursor.fetchall()
+    except:
+        pass
+    finally:
+        connection.close()
+        # logging.info("[INFO] PostgreSQL connection closed")
+
+
+def delete_row_table_promotion(id_promotion):
+    logging.info(f'dalete_row_table_promotion')
+    connection = connect_db(config)
+    try:
+        with connection.cursor() as cursor:
+            postgres_insert_query = f"""DELETE FROM promotion WHERE id = %s"""
+            cursor.execute(postgres_insert_query, (int(id_promotion),))
+    except:
+        pass
+    finally:
+        connection.close()
+        # logging.info("[INFO] PostgreSQL connection closed")
+
+
+def select_row_table_promotion(id_promotion):
+    logging.info(f'select_all_data_table_promotion')
+    connection = connect_db(config)
+    try:
+        with connection.cursor() as cursor:
+            postgres_insert_query = """SELECT * FROM promotion WHERE id = %s"""
+            cursor.execute(postgres_insert_query, (id_promotion,))
+            return cursor.fetchone()
+    except:
+        pass
+    finally:
+        connection.close()
+        # logging.info("[INFO] PostgreSQL connection closed")
+
+def delete_all_promotion():
+    logging.info(f'delete_all_promotion')
+    connection = connect_db(config)
+    try:
+        with connection.cursor() as cursor:
+            postgres_insert_query = """DELETE FROM promotion"""
+            cursor.execute(postgres_insert_query)
+            return cursor.fetchone()
+    except:
+        pass
+    finally:
+        connection.close()
+        # logging.info("[INFO] PostgreSQL connection closed")
+
 if __name__ == '__main__':
     # logging.info(f'create_table_promotion')
     # connection = connect_db(config)

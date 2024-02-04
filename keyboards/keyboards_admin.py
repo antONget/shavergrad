@@ -137,3 +137,30 @@ def keyboard_delete_select_dish():
     button_2 = InlineKeyboardButton(text='Отмена', callback_data='cancel_delete_select_dish')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
     return keyboard
+
+
+# АКЦИИ
+def keyboard_pass_add_photo_promotion():
+    button_1 = InlineKeyboardButton(text='Пропустить', callback_data='pass_add_photo_promotion')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
+    return keyboard
+
+
+def keyboard_confirm_add_promotion():
+    button_1 = InlineKeyboardButton(text='Добавить', callback_data='confirm_add_promotion')
+    button_2 = InlineKeyboardButton(text='Отмена', callback_data='cancel_add_promotion')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
+    return keyboard
+
+def keyboard_confirm_del_promotion():
+    button_1 = InlineKeyboardButton(text='Удалить', callback_data='confirm_del_promotion')
+    button_2 = InlineKeyboardButton(text='Отмена', callback_data='cancel_del_promotion')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
+    return keyboard
+
+
+def keyboard_confirm_del_all_promotion():
+    button_1 = InlineKeyboardButton(text='Удалить все акции', callback_data='confirm_del_all_promotion')
+    button_2 = InlineKeyboardButton(text='Отмена', callback_data='cancel_del_all_promotion')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
+    return keyboard
