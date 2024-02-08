@@ -82,7 +82,7 @@ async def get_category_dish(message: Message, state: FSMContext) -> None:
 @router.callback_query(F.data == 'dish_not_in_stop')
 async def press_dish_not_in_stop(callback: CallbackQuery, state: FSMContext) -> None:
     logging.info(f'press_button_add_dish_setting: {callback.message.chat.id}')
-    await state.update_data(add_in_stop=1)
+    await state.update_data(add_in_stop=0)
     await callback.message.answer(text=f'Подтверждение добавления блюда',
                                   reply_markup=keyboard_confirmation_add_dish())
 
@@ -90,7 +90,7 @@ async def press_dish_not_in_stop(callback: CallbackQuery, state: FSMContext) -> 
 @router.callback_query(F.data == 'dish_in_stop')
 async def press_dish_in_stop(callback: CallbackQuery, state: FSMContext) -> None:
     logging.info(f'press_button_add_dish_setting: {callback.message.chat.id}')
-    await state.update_data(add_in_stop=0)
+    await state.update_data(add_in_stop=1)
     await callback.message.answer(text=f'Подтверждение добавления блюда',
                                   reply_markup=keyboard_confirmation_add_dish())
 

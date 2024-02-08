@@ -18,6 +18,12 @@ async def main():
         level=logging.INFO,
         format='%(filename)s:%(lineno)d #%(levelname)-8s '
                '[%(asctime)s] - %(name)s - %(message)s')
+    # logging.basicConfig(level=logging.INFO, filename="py_log.log", filemode="w")
+    # logging.debug("A DEBUG Message")
+    # logging.info("An INFO")
+    # logging.warning("A WARNING")
+    # logging.error("An ERROR")
+    # logging.critical("A message of CRITICAL severity")
 
     # Выводим в консоль информацию о начале запуска бота
     logger.info('Starting bot')
@@ -36,7 +42,8 @@ async def main():
     dp.include_router(admin_handlers_menu_edit.router)
     dp.include_router(admin_handlers_menu_delete.router)
     dp.include_router(admin_handlers_promotion.router)
-    # dp.include_router(other_handlers.router)
+    dp.include_router(user_handlers.router)
+    dp.include_router(other_handlers.router)
 
     # Пропускаем накопившиеся update и запускаем polling
     await bot.delete_webhook(drop_pending_updates=True)

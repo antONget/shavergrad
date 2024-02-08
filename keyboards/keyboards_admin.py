@@ -164,3 +164,11 @@ def keyboard_confirm_del_all_promotion():
     button_2 = InlineKeyboardButton(text='Отмена', callback_data='cancel_del_all_promotion')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
     return keyboard
+
+
+def keyboard_role_admin():
+    button_1 = InlineKeyboardButton(text='Менеджер', callback_data='role_manager')
+    button_2 = InlineKeyboardButton(text='Курьер', callback_data='role_courier')
+    button_3 = InlineKeyboardButton(text='Повар', callback_data='role_cook')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3]])
+    return keyboard
