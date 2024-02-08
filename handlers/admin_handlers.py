@@ -2,15 +2,16 @@ from aiogram import Router, F
 import logging
 import requests
 
-from aiogram.filters import CommandStart,StateFilter
+from aiogram.filters import CommandStart, StateFilter, or_f
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup, default_state
 from config_data.config import Config, load_config
-from module.database import create_table_dish, create_table_promotion, insert_role_admin, create_table_admin
+from module.database import create_table_dish, create_table_promotion, insert_role_admin, create_table_admin, \
+    select_all_manager
 from keyboards.keyboards_admin import keyboards_superadmin, keyboard_edit_menu, keyboard_edit_promotion, \
-    keyboard_role_admin
-
+    keyboard_role_admin, keyboards_manager
+from filter.admin_filter import chek_manager
 router = Router()
 config: Config = load_config()
 user_dict = {}
@@ -28,6 +29,14 @@ async def process_start_command_admin(message: Message) -> None:
                              reply_markup=keyboard)
     else:
         await message.answer('Вы юзер')
+
+
+@router.message(CommandStart(), lambda message: chek_manager(str(message.chat.id)))
+async def process_start_command_manager(message: Message) -> None:
+    logging.info(f'process_start_command_manager: {message.chat.id}')
+    keyboard = keyboards_manager()
+    await message.answer('Выберите какой раздел вы хотите отредактировать',
+                         reply_markup=keyboard)
 
 
 @router.message(F.text == '⚙️ Меню 🍽', lambda message: str(message.chat.id) == str(config.tg_bot.admin_ids))

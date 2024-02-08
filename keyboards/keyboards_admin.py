@@ -13,7 +13,16 @@ def keyboards_superadmin():
         resize_keyboard=True
     )
     return keyboard
+def keyboards_manager():
 
+    button_1 = KeyboardButton(text='⚙️ Администраторы 👥')
+    button_2 = KeyboardButton(text='⚙️ Меню 🍽')
+    button_3 = KeyboardButton(text='⚙️ Акции и скидки 🎁')
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[[button_1], [button_2, button_3]],
+        resize_keyboard=True
+    )
+    return keyboard
 
 # МЕНЮ settngs
 def keyboard_edit_menu():

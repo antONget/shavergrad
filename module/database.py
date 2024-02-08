@@ -323,7 +323,7 @@ def select_all_manager(role):
         with connection.cursor() as cursor:
             postgres_insert_query = """SELECT telegram_id FROM admin WHERE role = %s"""
             cursor.execute(postgres_insert_query, (role,))
-            list_admin = [telegram_id[0] for telegram_id in cursor.fetchall()]
+            list_admin = [str(telegram_id[0]) for telegram_id in cursor.fetchall()]
             return list_admin
     except:
         pass
