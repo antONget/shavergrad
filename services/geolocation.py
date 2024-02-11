@@ -2,7 +2,7 @@ import json
 from shapely.geometry import shape, GeometryCollection, Point
 import requests
 
-with open('shawergrad/map.geojson', 'r') as f:
+with open('../map.geojson', 'r') as f:
     js = json.load(f)
 
 # point_out = Point(30.2645, 59.9720)
