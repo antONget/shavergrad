@@ -270,6 +270,16 @@ def insert_data_table_users(telegram_id, name, phone):
             connection.close()
     # print(select_row_table_users(telegram_id))
     # print(select_all_table_users())
+def update_phone_users(telegram_id, phone):
+    logging.info(f'insert_data_table_users')
+    connection = connect_db(config)
+    if connection:
+        with connection.cursor() as cursor:
+            if select_row_table_users(telegram_id):
+                postgres_insert_query = """UPDATE users SET phone = %s WHERE telegram_id = %s"""
+                record_to_insert = (phone, telegram_id)
+                cursor.execute(postgres_insert_query, record_to_insert)
+            connection.close()
 def select_row_table_users(id_user):
     logging.info(f'select_row_table_users')
     connection = connect_db(config)
@@ -376,13 +386,26 @@ def select_row_table_number_order(telegram_id):
         pass
     finally:
         connection.close()
-def update_status_table_number_id_order(telegram_id, id_order):
+
+def select_id_number_order(id_order):
+    logging.info(f'select_row_table_users')
+    connection = connect_db(config)
+    try:
+        with connection.cursor() as cursor:
+            postgres_insert_query = """SELECT id FROM number_order WHERE id_order = %s"""
+            cursor.execute(postgres_insert_query, (id_order,))
+            return cursor.fetchone()
+    except:
+        pass
+    finally:
+        connection.close()
+def update_status_table_number_id_order(status_order, telegram_id, id_order):
     logging.info(f'select_row_table_users')
     connection = connect_db(config)
     try:
         with connection.cursor() as cursor:
             postgres_insert_query = """UPDATE number_order SET status_order = %s WHERE telegram_id = %s and id_order = %s"""
-            cursor.execute(postgres_insert_query, (1, int(telegram_id), id_order, ))
+            cursor.execute(postgres_insert_query, (status_order, int(telegram_id), id_order, ))
     except:
         pass
     finally:
@@ -498,6 +521,19 @@ def update_table_orders(telegram_id, dish_id, order_id, portion):
     finally:
         connection.close()
 
+def delete_table_orders(dish_id, order_id):
+    logging.info(f'delete_table_orders')
+    connection = connect_db(config)
+    try:
+        with connection.cursor() as cursor:
+            postgres_insert_query = """DELETE FROM orders  WHERE order_id = %s and dish_id = %s"""
+            record_to_insert = (order_id, dish_id)
+            cursor.execute(postgres_insert_query, record_to_insert)
+
+    except:
+        pass
+    finally:
+        connection.close()
 
 # REGISTERED
 # def create_table_registered():

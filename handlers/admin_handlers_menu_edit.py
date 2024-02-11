@@ -211,7 +211,15 @@ async def press_button_edit_attribute_is_stop(callback: CallbackQuery, state: FS
         is_stop = 'Можно заказать'
     data_id_dish = select_row_id_dish(id_dish)
     keyboard = keyboard_edit_attribute_dish(data_id_dish[-1])
-    await callback.message.answer_photo(photo=data_id_dish[5],
+    # await callback.message.answer_photo(photo=data_id_dish[5],
+    #                                     caption=f"Категория блюда: {data_id_dish[3]}\n"
+    #                                             f"Наименование блюда: {data_id_dish[1]}\n"
+    #                                             f"Описание блюда: {data_id_dish[4]}\n"
+    #                                             f"Стоимость блюда: {data_id_dish[2]}\n"
+    #                                             f"Можно заказать: {is_stop}\n\n"
+    #                                             f"Что вы хотите исправить?",
+    #                                     reply_markup=keyboard)
+    await callback.message.edit_caption(inline_message_id=callback.inline_message_id,
                                         caption=f"Категория блюда: {data_id_dish[3]}\n"
                                                 f"Наименование блюда: {data_id_dish[1]}\n"
                                                 f"Описание блюда: {data_id_dish[4]}\n"

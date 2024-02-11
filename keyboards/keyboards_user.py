@@ -103,3 +103,9 @@ def keyboard_change_order(portion):
     button_6 = InlineKeyboardButton(text=f'Продолжить', callback_data=f'done_change')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2], [button_3, button_4, button_5], [button_6]])
     return keyboard
+
+def keyboard_pass_comment():
+    logging.info(f'keyboard_pass_comment')
+    button_1 = InlineKeyboardButton(text=f'Пропустить', callback_data=f'pass_comment')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
+    return keyboard
