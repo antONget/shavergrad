@@ -23,10 +23,10 @@ def keyboards_get_phone():
 
 
 def keyboards_main_menu():
-    button_1 = KeyboardButton(text='Меню 🍴')
-    button_2 = KeyboardButton(text='Акции')
-    button_3 = KeyboardButton(text='Контакты 📞')
-    button_4 = KeyboardButton(text='Корзина 🛒')
+    button_1 = KeyboardButton(text='🍴 Меню')
+    button_2 = KeyboardButton(text='🏷️ Акции')
+    button_3 = KeyboardButton(text='📞 Контакты')
+    button_4 = KeyboardButton(text='🛒 Корзина')
     keyboard = ReplyKeyboardMarkup(
         keyboard=[[button_1], [button_2], [button_3], [button_4]],
         resize_keyboard=True
@@ -48,7 +48,7 @@ def keyboards_list_category(list_category):
 
 def keyboard_paydish(cost, id_dish):
     logging.info(f'keyboard_confirm_phone')
-    button_1 = InlineKeyboardButton(text=f'Заказать за {cost}руб.', callback_data=f'paydish_{id_dish}')
+    button_1 = InlineKeyboardButton(text=f'Заказать за {cost} руб.', callback_data=f'paydish_{id_dish}')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
     return keyboard
 
@@ -93,13 +93,13 @@ def keyboard_confirm_register(id_order):
     return keyboard
 
 
-def keyboard_change_order(number_dish):
+def keyboard_change_order(portion):
     logging.info(f'keyboard_change_order')
     button_1 = InlineKeyboardButton(text=f'<<<<', callback_data=f'back_dish')
     button_2 = InlineKeyboardButton(text=f'>>>>', callback_data=f'forward_dish')
-    button_3 = InlineKeyboardButton(text=f'-', callback_data=f'minus_portion')
-    button_4 = InlineKeyboardButton(text=f'{number_dish}', callback_data=f'none')
-    button_5 = InlineKeyboardButton(text=f'+', callback_data=f'plus_portion')
+    button_3 = InlineKeyboardButton(text=f'-', callback_data=f'minus_portion_edit')
+    button_4 = InlineKeyboardButton(text=f'{portion}', callback_data=f'none')
+    button_5 = InlineKeyboardButton(text=f'+', callback_data=f'plus_portion_edit')
     button_6 = InlineKeyboardButton(text=f'Продолжить', callback_data=f'done_change')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2],[button_3, button_4, button_5], [button_6]])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2], [button_3, button_4, button_5], [button_6]])
     return keyboard

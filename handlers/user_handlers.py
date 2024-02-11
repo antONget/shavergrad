@@ -1,6 +1,10 @@
 from aiogram import Router, F, Bot
 import logging
+import asyncio
 import datetime
+import requests
+from services.geolocation import check_adress
+
 from aiogram.filters import CommandStart, and_f, or_f, StateFilter
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import State, StatesGroup, default_state
@@ -15,33 +19,52 @@ from module.database import create_table_user, select_row_table_users, insert_da
 from keyboards.keyboards_user import keyboard_confirm_phone, keyboards_get_phone, keyboards_main_menu,\
     keyboards_list_category, keyboard_paydish, keyboards_list_category_nav, keyboard_select_portion, \
     keyboard_continue_register, keyboard_confirm_register, keyboard_change_order
-
+from filter.admin_filter import filter_category, comand_user_admin
+#
 router = Router()
 config: Config = load_config()
-
-
+#
+#
 class Form_user(StatesGroup):
     name_user = State()
     phone_user = State()
     adress_user = State()
     comment_order = State()
-
+#
 user_dict = {}
 
 
-@router.message(or_f(CommandStart(), and_f(lambda message:  message.text == '/user', lambda message: str(message.chat.id) == str(config.tg_bot.admin_ids))))
+def get_telegram_user(user_id: int, bot_token: str) -> dict:
+    """
+    Проверка пользователя на взаимодействие с ботом
+    :param user_id: telegram_id пользователя
+    :param bot_token: TOKEN бота
+    :return: словарь с ответом
+    """
+    url = f'https://api.telegram.org/bot{bot_token}/getChat'
+    data = {'chat_id': user_id}
+    response = requests.post(url, data=data)
+    print(response.json())
+    return response.json()
+
+
+@router.message(or_f(CommandStart(), lambda message: comand_user_admin(message)))
 async def process_start_command_user(message: Message, state: FSMContext) -> None:
     logging.info(f'process_start_command_admin: {message.chat.id}')
     create_table_user()
-    await message.answer(text=f"""Друзья, всем доброго времени суток, рады будем вас накормить вкуснейшей шавермой и мощнейшими бургерами у нас в "Шаверграде" по адресу: Вишерская улица 2
-график работы: 10:00-23:00 без перерывов и выходных""")
+    await message.answer(text=f"Друзья, вас приветствуют «Шаверград»!\n"
+                              f"Всегда рады накормить вкуснейшей шавермой и мощнейшими бургерами.")
+    await asyncio.sleep(3)
+    await message.answer(text="Вы можете:\n"
+                              "🍽️ прийти к нам в кафе по адресу: Вишерская улица, 2 (график работы: 10:00-23:00)\n"
+                              "🤳или заказать доставку в этом боте с 10:00 до 22:45.")
     row_user = select_row_table_users(message.chat.id)
     # print(row_user)
     if not row_user:
         await message.answer(text='Как вас зовут?')
         await state.set_state(Form_user.name_user)
     else:
-        await message.answer(text=f'Рады видеть вас снова {row_user[2]}\n'
+        await message.answer(text=f'{row_user[2]}, рады видеть вас снова!\n'
                                   f'телефон: {row_user[3]}',
                              reply_markup=keyboard_confirm_phone())
 
@@ -49,7 +72,7 @@ async def process_start_command_user(message: Message, state: FSMContext) -> Non
 @router.message(F.text, StateFilter(Form_user.name_user))
 async def get_name_user(message: Message, state: FSMContext) -> None:
     await state.update_data(user_name=message.text)
-    await message.answer(text='Укажи свой телефон',
+    await message.answer(text='Укажите ваш номер телефона или нажмите внизу «Поделиться» 👇',
                          reply_markup=keyboards_get_phone())
     await state.set_state(Form_user.phone_user)
 
@@ -66,13 +89,15 @@ async def press_button_edit_phone(callback: CallbackQuery, state: FSMContext) ->
 @router.callback_query(F.data == 'continue_user')
 async def press_button_continue_user(callback: CallbackQuery, state: FSMContext) -> None:
     logging.info(f'press_button_continue_user: {callback.message.chat.id}')
-    await callback.message.answer(text='Выберите раздел',
+    await callback.message.answer(text='Для онлайн-заказа перейдите в раздел «🍴Меню». Если вы не завершили предыдущий '
+                                       'заказ, обратите внимание на корзину.',
                                   reply_markup=keyboards_main_menu())
     await state.set_state(default_state)
 
 
 @router.message(StateFilter(Form_user.phone_user))
 async def get_phone_user(message: Message, state: FSMContext) -> None:
+    logging.info(f'get_phone_user: {message.chat.id}')
     if message.contact:
         phone = str(message.contact.phone_number)
         # print(phone)
@@ -83,28 +108,29 @@ async def get_phone_user(message: Message, state: FSMContext) -> None:
     insert_data_table_users(telegram_id=message.chat.id,
                             name=user_dict[message.chat.id]['user_name'],
                             phone=user_dict[message.chat.id]['user_phone'])
-    await message.answer(text="""С помощью нашего бота-помощника вы можете ознакомиться с нашим меню, сделать онлайн заказ и наши курьеры доставят вам его. Кроме того в разделе акции вы узнаете о самых актуальных акциях!""")
-    await message.answer(text='Выберите раздел',
+    await message.answer(text="Для того, чтобы ознакомиться с меню или сделать онлайн-заказ на доставку, используйте"
+                              " выпадающую клавиатуру на панели чата с ботом: «🍴Меню ».")
+    await message.answer(text='При необходимости вы можете выбрать другие разделы или вернуться 🏠 в главное меню.',
                          reply_markup=keyboards_main_menu())
     await state.set_state(default_state)
-
-
+#
+#
 @router.message(F.text == '🏠')
 async def press_button_home(message: Message):
     await message.answer(text='Выберите раздел',
                          reply_markup=keyboards_main_menu())
 
 
-@router.message(F.text == 'Контакты 📞')
+@router.message(F.text == '📞 Контакты')
 async def press_button_contact(message: Message):
-    await message.answer_photo(photo='AgACAgIAAxkBAAINfGXCj50djUS5cRqccZuZT4JUTApwAAKU1zEbIZEQShVaSuyyAaIVAQADAgADeAADNAQ',
+    await message.answer_photo(photo='AgACAgIAAxkBAAIBq2XIoTRjF0VDFI7Dywq5fazj3hrBAAKk2zEbczhISps0ZgABYONr5gEAAwIAA3gAAzQE',
                                caption="""К сожалению в Яндекс картах нас пока нет, но мы это исправляем! Ориентир: внешняя часть угла дома
 
 10:00-23:00 без перерывов и выходных
 Вишерская улица 2""")
-
-
-@router.message(F.text == 'Акции')
+#
+#
+@router.message(F.text == '🏷️ Акции')
 async def press_button_promotion(message: Message):
     list_promotion = select_all_data_table_promotion()
     for promo in list_promotion:
@@ -114,29 +140,22 @@ async def press_button_promotion(message: Message):
                                        caption=promo[1])
         else:
             await message.answer(text=promo[1])
-
-
-@router.message(F.text == 'Меню 🍴')
+#
+#
+@router.message(F.text == '🍴 Меню')
 async def press_button_menu(message: Message):
     list_category = select_all_category_table_dish()
     keyboard = keyboards_list_category(list_category)
-    await message.answer(text=f"""Минимальная сумма заказа: <b>1700р.</b>
-Прием заказов осуществляется с 10:00 до 22:45
-
-Выбери раздел:""",
+    await message.answer(text=f"Минимальная сумма заказа: <b>1700 руб.</b>\n"
+                              f"Выберите блюдо:",
                          reply_markup=keyboard)
-
-
-@router.message(F.text.in_(select_all_category_table_dish()))
+#
+#
+@router.message(lambda message: filter_category(message.text))
 async def press_button_category(message: Message, state: FSMContext):
-    """
-    Функция получает наименование категории блюда и формирует три карточки из этой категории
-    :param message: категория
-    :param state:
-    :return: выводит три карточки блюд
-    """
-    logging.info(f'press_button_category: {message.chat.id}')
+    # logging.info(f'press_button_category: {message.chat.id}')
     category = message.text
+    print(category)
     await state.update_data(select_category=category)
     await state.update_data(num_block=1)
     list_id_dish_category = select_dish_in_category(category)
@@ -157,14 +176,16 @@ async def press_button_category(message: Message, state: FSMContext):
         # если не в стоп листе
         if not row_dish[-1]:
             await message.answer_photo(photo=row_dish[-2],
-                                       caption=f'Название: {row_dish[1]}'
-                                               f'Описание: {row_dish[4]}',
+                                       caption=f'Название: {row_dish[1]}\n'
+                                               f'Состав: {row_dish[4]}',
                                        reply_markup=keyboard_paydish(row_dish[2], row_dish[0]))
     list_category = select_all_category_table_dish()
-    await message.answer(text="Закажите блюдо",
+    await message.answer(text=f"Для выбора других позиций в категории <b>{category}</b> листайте\n"
+                              f" ⏪ Назад 🏠 Вперед ⏩ "
+                              f"на клавиатуре 👇",
                          reply_markup=keyboards_list_category_nav(list_category))
-
-
+#
+#
 @router.message(or_f(F.text == '<< Назад', F.text == 'Вперед >>'))
 async def press_button_back_forward(message: Message, state: FSMContext):
     """
@@ -219,14 +240,16 @@ async def press_button_back_forward(message: Message, state: FSMContext):
         # если не в стоп листе
         if not row_dish[-1]:
             await message.answer_photo(photo=row_dish[-2],
-                                       caption=f'Название: {row_dish[1]}'
-                                               f'Описание: {row_dish[4]}',
+                                       caption=f'Название: {row_dish[1]}\n'
+                                               f'Состав: {row_dish[4]}',
                                        reply_markup=keyboard_paydish(row_dish[2], row_dish[0]))
     list_category = select_all_category_table_dish()
-    await message.answer(text="Закажите блюдо",
+    await message.answer(text=f"Для выбора других позиций в категории <b>{category}</b> листайте\n"
+                              f" ⏪ Назад 🏠 Вперед ⏩ "
+                              f"на клавиатуре 👇",
                          reply_markup=keyboards_list_category_nav(list_category))
-
-
+#
+#
 @router.callback_query(F.data.startswith('paydish'))
 async def press_button_payment_dish(callback: CallbackQuery, state: FSMContext):
     """
@@ -265,13 +288,13 @@ async def press_button_payment_dish(callback: CallbackQuery, state: FSMContext):
     await state.update_data(id_dish=id_dish)
     await state.update_data(id_order=number_order)
     portion_old = select_data_table_orders_idorder_iddish(callback.message.chat.id, number_order, id_dish)
-    await callback.message.answer(text=f'Вы выбрали'
+    await callback.message.answer(text=f'Вы выбрали '
                                        f'{info_dish[1]}',
                                   reply_markup=keyboards_list_category(list_category))
-    await callback.message.answer(text=f'Укажите количество порций!',
+    await callback.message.answer(text=f'Укажите количество порций.',
                                   reply_markup=keyboard_select_portion(portion=portion_old[0][0]))
-
-
+#
+#
 @router.callback_query(F.data.endswith('portion'))
 async def press_button_payment_dish(callback: CallbackQuery, state: FSMContext):
     logging.info(f'press_button_payment_dish: {callback.message.chat.id}')
@@ -287,13 +310,13 @@ async def press_button_payment_dish(callback: CallbackQuery, state: FSMContext):
         else:
             portion = 0
     try:
-        await callback.message.edit_text(text=f'Укажите количество порций!',
+        await callback.message.edit_text(text=f'Укажите количество порций.',
                                          reply_markup=keyboard_select_portion(portion=portion))
     except:
-        await callback.message.edit_text(text=f'Укажитe количество порций!',
+        await callback.message.edit_text(text=f'Укажитe количество порций.',
                                          reply_markup=keyboard_select_portion(portion=portion))
-
-
+#
+#
 @router.callback_query(F.data == 'order_dish')
 async def press_button_order_dish(callback: CallbackQuery, state: FSMContext):
     logging.info(f'press_button_order_dish: {callback.message.chat.id}')
@@ -302,19 +325,16 @@ async def press_button_order_dish(callback: CallbackQuery, state: FSMContext):
                         dish_id=user_dict[callback.message.chat.id]['id_dish'],
                         order_id=user_dict[callback.message.chat.id]['id_order'],
                         portion=user_dict[callback.message.chat.id]['portion'])
-    await callback.message.answer(text='Желаете что то добавить в свой заказ?',
+    await callback.message.answer(text='Желаете что-то ещё добавить в свой заказ?',
                                   reply_markup=keyboard_continue_register())
-
-
+#
+#
 @router.callback_query(F.data == 'cancel_order_dish')
 async def press_button_cancel_order_dish(callback: CallbackQuery, state: FSMContext):
     logging.info(f'press_button_cancel_order_dish: {callback.message.chat.id}')
     list_category = select_all_category_table_dish()
     keyboard = keyboards_list_category(list_category)
-    await callback.message.answer(text=f"""Минимальная сумма заказа: <b>1700р.</b>
-    Прием заказов осуществляется с 10:00 до 22:45
-
-    Выбери раздел:""",
+    await callback.message.answer(text=f"Блюдо отменено. Продолжите выбор блюд 👇",
                                   reply_markup=keyboard)
 
 
@@ -323,13 +343,10 @@ async def press_button_continue_order(callback: CallbackQuery, state: FSMContext
     logging.info(f'press_button_continue_order: {callback.message.chat.id}')
     list_category = select_all_category_table_dish()
     keyboard = keyboards_list_category(list_category)
-    await callback.message.answer(text=f"""Минимальная сумма заказа: <b>1700р.</b>
-    Прием заказов осуществляется с 10:00 до 22:45
-
-    Выбери раздел:""",
+    await callback.message.answer(text=f"Продолжите выбор блюд 👇",
                                   reply_markup=keyboard)
-
-
+#
+#
 @router.callback_query(F.data == 'register_order')
 async def press_button_register_order(callback: CallbackQuery):
     logging.info(f'press_button_register_order: {callback.message.chat.id}')
@@ -343,13 +360,13 @@ async def press_button_register_order(callback: CallbackQuery):
         total = 0
         for i, info_order in enumerate(info_dish_last_order):
             info_dish = select_row_id_dish(info_order[3])
-            name = name+f'{i+1}. {info_dish[1]}: {info_dish[2]} x {info_order[4]} = {info_dish[2] * info_order[4]}руб.\n'
+            name = name+f'{i+1}. {info_dish[1]}: {info_dish[2]} x {info_order[4]} = {info_dish[2] * info_order[4]} руб.\n'
             total += info_dish[2]*info_order[4]
         await callback.message.answer(text=f'{name}\n\n'
                                            f'Сумма заказа: {total} руб.',
                                       reply_markup=keyboard_confirm_register(order_id))
-
-
+#
+#
 @router.callback_query(F.data.startswith('registerdone'))
 async def press_button_register_all_done(callback: CallbackQuery, state: FSMContext):
     logging.info(f'press_button_register_all_done: {callback.message.chat.id}')
@@ -359,22 +376,27 @@ async def press_button_register_all_done(callback: CallbackQuery, state: FSMCont
     await state.update_data(register_order=id_order)
     update_status_table_number_id_order(telegram_id=callback.message.chat.id,
                                         id_order=id_order)
-    await callback.message.answer(text=f'Укажите ваш адрес.')
+    await callback.message.answer_photo(photo="AgACAgIAAxkBAAIBN2XIkzZGPflWKE9lVJfjds9WZYihAAJO2zEbczhISsV6voCB0e5GAQADAgADeQADNAQ",
+                                        caption=f'Наша зона доставки! Укажите ваш адрес.')
+
     await state.set_state(Form_user.adress_user)
-
-
+#
+#
 @router.message(F.text, StateFilter(Form_user.adress_user))
 async def get_adress_user(message: Message, state: FSMContext):
     logging.info(f'get_adress_user: {message.chat.id}')
-    adress = message.text
-    user_dict[message.chat.id] = await state.get_data()
-    update_status_table_number_adress(telegram_id=message.chat.id,
-                                      id_order=user_dict[message.chat.id]['register_order'],
-                                      adress_order=adress)
-    await message.answer(text=f'Оставьте комментарий к заказу!')
-    await state.set_state(Form_user.comment_order)
-
-
+    if check_adress(adress=message.text):
+        adress = message.text
+        user_dict[message.chat.id] = await state.get_data()
+        update_status_table_number_adress(telegram_id=message.chat.id,
+                                          id_order=user_dict[message.chat.id]['register_order'],
+                                          adress_order=adress)
+        await message.answer(text=f'Оставьте комментарий к заказу!')
+        await state.set_state(Form_user.comment_order)
+    else:
+        await message.answer(text=f'Ваш адресс вне зоны.')
+#
+#
 @router.message(F.text, StateFilter(Form_user.comment_order))
 async def get_comment_order(message: Message, state: FSMContext, bot: Bot):
     logging.info(f'get_comment_order: {message.chat.id}')
@@ -395,31 +417,54 @@ async def get_comment_order(message: Message, state: FSMContext, bot: Bot):
                                text=text_cook)
 
     for id_telegram_manager in list_manager:
-        await bot.send_message(chat_id=id_telegram_manager,
-                               text=text_manager)
+        user = get_telegram_user(id_telegram_manager, config.tg_bot.token)
+        if 'result' in user:
+            last_number_orders = select_row_table_number_order(message.chat.id)[-1]
+            order_id = last_number_orders[1]
+            print('order_id', order_id)
+            info_dish_last_order = select_data_table_orders_to_order_id(order_id=order_id)
+            name = ''
+            total = 0
+            for i, info_order in enumerate(info_dish_last_order):
+                info_dish = select_row_id_dish(info_order[3])
+                name = name + f'{i + 1}. {info_dish[1]}: {info_dish[2]} x {info_order[4]} = {info_dish[2] * info_order[4]}руб.\n'
+                total += info_dish[2] * info_order[4]
+            print(id_telegram_manager)
+            await bot.send_message(chat_id=id_telegram_manager,
+                                   text=f'{name}\n\n'
+                                        f'Сумма заказа: {total} руб.')
+        else:
+            await bot.send_message(chat_id=config.tg_bot.admin_ids,
+                                   text=f"Сообщение пользователю c id: {id_telegram_manager} не доставлено")
 
 
+# ИЗМЕНЕНИЕ СОЗДАННОГО ЗАКАЗА
 @router.callback_query(F.data.startswith('registerchange'))
 async def press_button_register_change(callback: CallbackQuery, state: FSMContext):
     logging.info(f'press_button_register_change: {callback.message.chat.id}')
     print('press_button_register_change')
     id_order = callback.data.split('.')[1]
+    await state.update_data(register_order=id_order)
     print("id_order-change", id_order)
     print('all', select_data_table_orders())
     print('id_order', select_data_table_orders_to_order_id(id_order))
+    # получаем список из таблицы заказов по его id
     info_dish_last_order = select_data_table_orders_to_order_id(order_id=id_order)
     await state.update_data(list_dish_in_order=info_dish_last_order)
-    await state.update_data(number_dish=1)
+    await state.update_data(number_dish=0)
     print(info_dish_last_order)
-    number_dish = 1
-    info_order = info_dish_last_order[number_dish-1]
+    # выводим первое блюдо в заказе
+    number_dish = 0
+    info_order = info_dish_last_order[number_dish]
+    # id первого блюда в заказе
     id_dish = info_order[3]
+    # информация о блюде по его id
     info_dish = select_row_id_dish(id_dish)
     await callback.message.answer_photo(photo=info_dish[5],
-                                        caption=f'{info_dish[1]}\n'
-                                                f'{info_dish[4]}\n'
-                                                f'{info_dish[2]}\n',
-                                        reply_markup=keyboard_change_order(number_dish))
+                                        caption=f'<b>{info_dish[1]}</b>\n'
+                                                f'Состав: {info_dish[4]}\n'
+                                                f'Стоимость: {info_dish[2]} руб.\n',
+                                        reply_markup=keyboard_change_order(portion=info_order[4]))
 
 
 @router.callback_query(F.data.startswith('done_change'))
@@ -431,28 +476,71 @@ async def press_button_done_change(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(or_f(F.data == 'back_dish', F.data == 'forward_dish'))
 async def press_button_done_change(callback: CallbackQuery, state: FSMContext):
+    logging.info(f'press_button_done_change: {callback.message.chat.id}')
     user_dict[callback.message.chat.id] = await state.get_data()
     list_dish_in_order = user_dict[callback.message.chat.id]['list_dish_in_order']
     count_dish = len(list_dish_in_order)
+    print("count_dish", count_dish)
     number_dish = user_dict[callback.message.chat.id]['number_dish']
-
+    print("number_dish", number_dish)
     if callback.data == 'back_dish':
-        if number_dish > 1:
+        print('back_dish')
+        if number_dish > 0:
             number_dish -= 1
     elif callback.data == 'forward_dish':
-        if number_dish < count_dish:
+        print('forward_dish')
+        if number_dish < count_dish-1:
             number_dish += 1
-    info_order = list_dish_in_order[number_dish - 1]
+    await state.update_data(number_dish=number_dish)
+    info_order = list_dish_in_order[number_dish]
     id_dish = info_order[3]
     info_dish = select_row_id_dish(id_dish)
     await callback.message.answer_photo(photo=info_dish[5],
-                                        caption=f'{info_dish[1]}\n'
-                                                f'{info_dish[4]}\n'
-                                                f'{info_dish[2]}\n',
-                                        reply_markup=keyboard_change_order(number_dish))
+                                        caption=f'<b>{info_dish[1]}</b>\n'
+                                                f'Состав: {info_dish[4]}\n'
+                                                f'Стоимость: {info_dish[2]} руб.\n',
+                                        reply_markup=keyboard_change_order(portion=info_order[4]))
 
 
-@router.message(F.text == 'Корзина 🛒')
+@router.callback_query(or_f(F.data.startswith('minus_portion_edit'), F.data.startswith('plus_portion_edit')))
+async def press_button_done_change(callback: CallbackQuery, state: FSMContext):
+    user_dict[callback.message.chat.id] = await state.get_data()
+    list_dish_in_order = user_dict[callback.message.chat.id]['list_dish_in_order']
+    number_dish = user_dict[callback.message.chat.id]['number_dish']
+    info_order = list_dish_in_order[number_dish]
+    id_dish = info_order[3]
+    order_id = info_order
+    portion = select_data_table_orders_idorder_iddish(telegram_id=callback.message.chat.id,
+                                                      order_id=order_id,
+                                                      dish_id=id_dish)[0][0]
+    print('portion', portion)
+    if 'minus_portion_' in callback.data:
+        print('minus_portion_')
+        portion = portion - 1
+    elif 'plus_portion_' in callback.data:
+        print('plus_portion_')
+        portion = portion + 1
+    # обновляем количество порций
+    update_table_orders(telegram_id=callback.message.chat.id,
+                        dish_id=id_dish,
+                        order_id=order_id,
+                        portion=portion)
+    print('portion', portion)
+    # обновляем информацию о списке блюд в заказе
+    info_dish_last_order = select_data_table_orders_to_order_id(order_id=order_id)
+    print(info_dish_last_order)
+    await state.update_data(list_dish_in_order=info_dish_last_order)
+    info_order = list_dish_in_order[number_dish]
+    print(info_order)
+    info_dish = select_row_id_dish(id_dish)
+    await callback.message.answer_photo(photo=info_dish[5],
+                                        caption=f'<b>{info_dish[1]}</b>\n'
+                                                f'Состав: {info_dish[4]}\n'
+                                                f'Стоимость: {info_dish[2]} руб.\n',
+                                        reply_markup=keyboard_change_order(portion=info_order[4]))
+
+
+@router.message(F.text == '🛒 Корзина')
 async def press_button_cart(message: Message):
     print("press_button_cart")
     last_number_orders = select_row_table_number_order(message.chat.id)[-1]

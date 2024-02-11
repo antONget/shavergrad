@@ -90,6 +90,7 @@ def select_all_category_table_dish():
             postgres_insert_query = """SELECT category_dish FROM dish"""
             cursor.execute(postgres_insert_query)
             list_category = [category[0] for category in cursor.fetchall()]
+            # print(list_category)
             return list(set(list_category))
     except:
         pass
@@ -402,6 +403,8 @@ def update_status_table_number_comment(telegram_id, id_order, comment):
         pass
     finally:
         connection.close()
+
+
 # ORDERS
 def create_table_orders():
     logging.info(f'create_table_order')
@@ -462,7 +465,7 @@ def select_data_table_orders_idorder_iddish(telegram_id, order_id, dish_id):
     finally:
         connection.close()
 def select_data_table_orders_to_order_id(order_id):
-    logging.info(f'select_data_table_orders')
+    logging.info(f'select_data_table_orders_to_order_id')
     connection = connect_db(config)
     try:
         with connection.cursor() as cursor:

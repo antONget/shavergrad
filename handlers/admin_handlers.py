@@ -23,6 +23,7 @@ class Admin(StatesGroup):
 @router.message(CommandStart(), lambda message: str(message.chat.id) == str(config.tg_bot.admin_ids))
 async def process_start_command_admin(message: Message) -> None:
     logging.info(f'process_start_command_admin: {message.chat.id}')
+    print('def', 'process_start_command_admin')
     if str(message.chat.id) == str(config.tg_bot.admin_ids):
         keyboard = keyboards_superadmin()
         await message.answer('Выберите какой раздел вы хотите отредактировать',
@@ -39,7 +40,7 @@ async def process_start_command_manager(message: Message) -> None:
                          reply_markup=keyboard)
 
 
-@router.message(F.text == '⚙️ Меню 🍽', lambda message: str(message.chat.id) == str(config.tg_bot.admin_ids))
+@router.message(F.text == '⚙️ Меню 🍽', lambda message: chek_manager(str(message.chat.id)))
 async def press_button_setting_menu(message: Message) -> None:
     logging.info(f'press_button_setting_menu: {message.chat.id}')
     create_table_dish()
@@ -48,7 +49,7 @@ async def press_button_setting_menu(message: Message) -> None:
                          reply_markup=keyboard)
 
 
-@router.message(F.text == '⚙️ Акции и скидки 🎁', lambda message: str(message.chat.id) == str(config.tg_bot.admin_ids))
+@router.message(F.text == '⚙️ Акции и скидки 🎁', lambda message: chek_manager(str(message.chat.id)))
 async def press_button_setting_promotion(message: Message) -> None:
     logging.info(f'press_button_setting_promotion: {message.chat.id}')
     create_table_promotion()
@@ -57,7 +58,7 @@ async def press_button_setting_promotion(message: Message) -> None:
                          reply_markup=keyboard)
 
 
-@router.message(F.text == '⚙️ Администраторы 👥', lambda message: str(message.chat.id) == str(config.tg_bot.admin_ids))
+@router.message(F.text == '⚙️ Администраторы 👥', lambda message: chek_manager(str(message.chat.id)))
 async def press_button_setting_administrator(message: Message) -> None:
     logging.info(f'press_button_setting_administrator: {message.chat.id}')
     create_table_admin()
