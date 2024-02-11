@@ -87,11 +87,18 @@ def select_all_category_table_dish():
     connection = connect_db(config)
     try:
         with connection.cursor() as cursor:
-            postgres_insert_query = """SELECT category_dish FROM dish"""
+            postgres_insert_query = """SELECT category_dish FROM dish ORDER BY id"""
             cursor.execute(postgres_insert_query)
-            list_category = [category[0] for category in cursor.fetchall()]
+            list_category = []
+            for i, category in enumerate(cursor.fetchall()):
+                # print(i, list_category)
+                if not list_category:
+                    list_category.append(category[0])
+                else:
+                    if not list_category[-1] == category[0]:
+                        list_category.append(category[0])
             # print(list_category)
-            return list(set(list_category))
+            return list_category
     except:
         pass
     finally:
@@ -469,7 +476,7 @@ def select_data_table_orders_to_order_id(order_id):
     connection = connect_db(config)
     try:
         with connection.cursor() as cursor:
-            postgres_insert_query = """SELECT * FROM orders WHERE order_id = %s"""
+            postgres_insert_query = """SELECT * FROM orders WHERE order_id = %s ORDER BY id"""
             cursor.execute(postgres_insert_query, (order_id,))
             return cursor.fetchall()
     except:

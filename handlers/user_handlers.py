@@ -509,7 +509,7 @@ async def press_button_done_change(callback: CallbackQuery, state: FSMContext):
     number_dish = user_dict[callback.message.chat.id]['number_dish']
     info_order = list_dish_in_order[number_dish]
     id_dish = info_order[3]
-    order_id = info_order
+    order_id = info_order[2]
     portion = select_data_table_orders_idorder_iddish(telegram_id=callback.message.chat.id,
                                                       order_id=order_id,
                                                       dish_id=id_dish)[0][0]
@@ -528,10 +528,17 @@ async def press_button_done_change(callback: CallbackQuery, state: FSMContext):
     print('portion', portion)
     # обновляем информацию о списке блюд в заказе
     info_dish_last_order = select_data_table_orders_to_order_id(order_id=order_id)
+
     print(info_dish_last_order)
     await state.update_data(list_dish_in_order=info_dish_last_order)
-    info_order = list_dish_in_order[number_dish]
+    list_dish_in_order = user_dict[callback.message.chat.id]['list_dish_in_order']
+    print(list_dish_in_order)
+    info_order = info_dish_last_order[number_dish]
     print(info_order)
+    # for order in info_dish_last_order:
+    #     if order[3] == id_dish:
+    #         info_order = order
+
     info_dish = select_row_id_dish(id_dish)
     await callback.message.answer_photo(photo=info_dish[5],
                                         caption=f'<b>{info_dish[1]}</b>\n'
