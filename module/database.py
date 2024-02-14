@@ -109,8 +109,8 @@ def select_dish_in_category(category_dish):
     connection = connect_db(config)
     try:
         with connection.cursor() as cursor:
-            postgres_insert_query = """SELECT id, name_dish FROM dish WHERE category_dish = %s"""
-            cursor.execute(postgres_insert_query, (str(category_dish),))
+            postgres_insert_query = """SELECT id, name_dish FROM dish WHERE category_dish = %s AND is_stop = %s ORDER BY id"""
+            cursor.execute(postgres_insert_query, (str(category_dish), 0))
             return cursor.fetchall()
     except:
         pass

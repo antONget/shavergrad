@@ -171,103 +171,147 @@ async def press_button_menu(message: Message):
 #
 @router.message(lambda message: filter_category(message.text))
 async def press_button_category(message: Message, state: FSMContext):
-    # logging.info(f'press_button_category: {message.chat.id}')
+    logging.info(f'press_button_category: {message.chat.id}')
     category = message.text
     print(category)
     await state.update_data(select_category=category)
     await state.update_data(num_block=1)
+    # получаем список айди и названий блюд в категории не в стоп списке
     list_id_dish_category = select_dish_in_category(category)
-    # print(list_id_dish_category)
-    back = 0
-    forward = 2
-    count = 3
+    # получаем информацию о блюде первой в списке по его айди
+    info_dish = select_row_id_dish(list_id_dish_category[0][0])
+    await message.answer_photo(photo=info_dish[5],
+                               caption=f'<b>{info_dish[1]}</b>\n\n'
+                                       f'Описание: {info_dish[4]}\n',
+                               reply_markup=keyboard_paydish(cost=info_dish[2], id_dish=info_dish[0],
+                                                             list_id_dish_category=list_id_dish_category))
 
-    len_list = len(list_id_dish_category)
-    int_block = len_list // count
-    remain_block = len_list % count
-    if remain_block:
-        int_block += 1
-    for id_dish in list_id_dish_category[back*count:(forward-1)*count]:
-        # print('id_dish', id_dish)
-        row_dish = select_row_id_dish(id_dish[0])
-        # print('row_dish', row_dish)
-        # если не в стоп листе
-        if not row_dish[-1]:
-            await message.answer_photo(photo=row_dish[-2],
-                                       caption=f'Название: {row_dish[1]}\n'
-                                               f'Состав: {row_dish[4]}',
-                                       reply_markup=keyboard_paydish(row_dish[2], row_dish[0]))
-    list_category = select_all_category_table_dish()
-    await message.answer(text=f"Для выбора других позиций в категории <b>{category}</b> листайте\n"
-                              f" ⏪ Назад 🏠 Вперед ⏩ "
-                              f"на клавиатуре 👇",
-                         reply_markup=keyboards_list_category_nav(list_category))
+
+
+
+# @router.message(lambda message: filter_category(message.text))
+# async def press_button_category(message: Message, state: FSMContext):
+#     # logging.info(f'press_button_category: {message.chat.id}')
+#     category = message.text
+#     print(category)
+#     await state.update_data(select_category=category)
+#     await state.update_data(num_block=1)
+#     list_id_dish_category = select_dish_in_category(category)
+#     # print(list_id_dish_category)
+#     back = 0
+#     forward = 2
+#     count = 3
+#
+#     len_list = len(list_id_dish_category)
+#     int_block = len_list // count
+#     remain_block = len_list % count
+#     if remain_block:
+#         int_block += 1
+#     for id_dish in list_id_dish_category[back*count:(forward-1)*count]:
+#         # print('id_dish', id_dish)
+#         row_dish = select_row_id_dish(id_dish[0])
+#         # print('row_dish', row_dish)
+#         # если не в стоп листе
+#         if not row_dish[-1]:
+#             await message.answer_photo(photo=row_dish[-2],
+#                                        caption=f'Название: {row_dish[1]}\n'
+#                                                f'Состав: {row_dish[4]}',
+#                                        reply_markup=keyboard_paydish(row_dish[2], row_dish[0]))
+#     list_category = select_all_category_table_dish()
+#     await message.answer(text=f"Для выбора других позиций в категории <b>{category}</b> листайте\n"
+#                               f" ⏪ Назад 🏠 Вперед ⏩ "
+#                               f"на клавиатуре 👇",
+#                          reply_markup=keyboards_list_category_nav(list_category))
+# #
+# #
+# @router.message(or_f(F.text == '<< Назад', F.text == 'Вперед >>'))
+# async def press_button_back_forward(message: Message, state: FSMContext):
+#     """
+#     Функция реагирует на нажатие на кнопки навигации - << Назад и Вперед >> увеличивая
+#     номер выводимо блока с карточками блюд
+#     :param message:
+#     :param state:
+#     :return:
+#     """
+#     logging.info(f'press_button_back_forward: {message.chat.id}')
+#     user_dict[message.chat.id] = await state.get_data()
+#     category = user_dict[message.chat.id]['select_category']
+#     num_block = user_dict[message.chat.id]['num_block']
+#     print("num_block", num_block)
+#     list_id_dish_category = select_dish_in_category(category)
+#     print(list_id_dish_category)
+#     count = 3
+#     len_list = len(list_id_dish_category)
+#     int_block = len_list // count
+#     remain_block = len_list % count
+#     if remain_block:
+#         int_block += 1
+#     print('int_block: ', int_block)
+#     back = 0
+#     forward = 1
+#     if message.text == '<< Назад':
+#         num_block -= 1
+#         if num_block == 1:
+#             back = 0
+#             forward = 2
+#             await state.update_data(num_block=back+1)
+#         else:
+#             back = num_block - 1
+#             forward = num_block + 1
+#             await state.update_data(num_block=back+1)
+#     elif message.text == 'Вперед >>':
+#         num_block += 1
+#         if num_block == int_block:
+#             back = int_block - 1
+#             forward = int_block + 1
+#             await state.update_data(num_block=back+1)
+#         else:
+#             back = num_block - 1
+#             forward = num_block + 1
+#             await state.update_data(num_block=back+1)
+#
+#     print('back:', back, 'forward:', forward)
+#     for id_dish in list_id_dish_category[back*count:(forward-1)*count]:
+#         # print('id_dish', id_dish)
+#         row_dish = select_row_id_dish(id_dish[0])
+#         # print('row_dish', row_dish)
+#         # если не в стоп листе
+#         if not row_dish[-1]:
+#             await message.answer_photo(photo=row_dish[-2],
+#                                        caption=f'Название: {row_dish[1]}\n'
+#                                                f'Состав: {row_dish[4]}',
+#                                        reply_markup=keyboard_paydish(row_dish[2], row_dish[0]))
+#     list_category = select_all_category_table_dish()
+#     await message.answer(text=f"Для выбора других позиций в категории <b>{category}</b> листайте\n"
+#                               f" ⏪ Назад 🏠 Вперед ⏩ "
+#                               f"на клавиатуре 👇",
+#                          reply_markup=keyboards_list_category_nav(list_category))
 #
 #
-@router.message(or_f(F.text == '<< Назад', F.text == 'Вперед >>'))
-async def press_button_back_forward(message: Message, state: FSMContext):
+@router.callback_query(F.data.startswith('showdish'))
+async def press_button_show_dish(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """
-    Функция реагирует на нажатие на кнопки навигации - << Назад и Вперед >> увеличивая
-    номер выводимо блока с карточками блюд
-    :param message:
+    Функция реагирует на нажатие на блюдо для показа его карточки
+    :param callback: передается showdish_id_dish
     :param state:
     :return:
     """
-    logging.info(f'press_button_back_forward: {message.chat.id}')
-    user_dict[message.chat.id] = await state.get_data()
-    category = user_dict[message.chat.id]['select_category']
-    num_block = user_dict[message.chat.id]['num_block']
-    print("num_block", num_block)
+    logging.info(f'press_button_payment_dish: {callback.message.chat.id}')
+    id_dish = int(callback.data.split('_')[1])
+    info_dish = select_row_id_dish(id_dish)
+    user_dict[callback.message.chat.id] = await state.get_data()
+    category = user_dict[callback.message.chat.id]['select_category']
     list_id_dish_category = select_dish_in_category(category)
-    print(list_id_dish_category)
-    count = 3
-    len_list = len(list_id_dish_category)
-    int_block = len_list // count
-    remain_block = len_list % count
-    if remain_block:
-        int_block += 1
-    print('int_block: ', int_block)
-    back = 0
-    forward = 1
-    if message.text == '<< Назад':
-        num_block -= 1
-        if num_block == 1:
-            back = 0
-            forward = 2
-            await state.update_data(num_block=back+1)
-        else:
-            back = num_block - 1
-            forward = num_block + 1
-            await state.update_data(num_block=back+1)
-    elif message.text == 'Вперед >>':
-        num_block += 1
-        if num_block == int_block:
-            back = int_block - 1
-            forward = int_block + 1
-            await state.update_data(num_block=back+1)
-        else:
-            back = num_block - 1
-            forward = num_block + 1
-            await state.update_data(num_block=back+1)
+    print(callback.message.message_id)
+    await bot.delete_message(chat_id=callback.message.chat.id,
+                             message_id=(callback.message.message_id))
+    await callback.message.answer_photo(photo=info_dish[5],
+                                        caption=f'<b>{info_dish[1]}</b>\n\n'
+                                                f'Описание: {info_dish[4]}\n',
+                                        reply_markup=keyboard_paydish(cost=info_dish[2], id_dish=info_dish[0],
+                                                                      list_id_dish_category=list_id_dish_category))
 
-    print('back:', back, 'forward:', forward)
-    for id_dish in list_id_dish_category[back*count:(forward-1)*count]:
-        # print('id_dish', id_dish)
-        row_dish = select_row_id_dish(id_dish[0])
-        # print('row_dish', row_dish)
-        # если не в стоп листе
-        if not row_dish[-1]:
-            await message.answer_photo(photo=row_dish[-2],
-                                       caption=f'Название: {row_dish[1]}\n'
-                                               f'Состав: {row_dish[4]}',
-                                       reply_markup=keyboard_paydish(row_dish[2], row_dish[0]))
-    list_category = select_all_category_table_dish()
-    await message.answer(text=f"Для выбора других позиций в категории <b>{category}</b> листайте\n"
-                              f" ⏪ Назад 🏠 Вперед ⏩ "
-                              f"на клавиатуре 👇",
-                         reply_markup=keyboards_list_category_nav(list_category))
-#
-#
+
 @router.callback_query(F.data.startswith('paydish'))
 async def press_button_payment_dish(callback: CallbackQuery, state: FSMContext):
     """
@@ -415,6 +459,7 @@ async def get_adress_user(message: Message, state: FSMContext):
     logging.info(f'get_adress_user: {message.chat.id}')
     if check_adress(adress=message.text):
         adress = message.text
+        await state.update_data(adress=adress)
         user_dict[message.chat.id] = await state.get_data()
         update_status_table_number_adress(telegram_id=message.chat.id,
                                           id_order=user_dict[message.chat.id]['register_order'],
@@ -431,6 +476,7 @@ async def press_button_pass_comment(callback: CallbackQuery, state: FSMContext, 
     logging.info(f'press_button_pass_comment: {callback.message.chat.id}')
     logging.info(f'get_comment_order: {callback.message.chat.id}')
     comment = 'none'
+    await state.update_data(comment=comment)
     update_status_table_number_comment(telegram_id=callback.message.chat.id,
                                        id_order=user_dict[callback.message.chat.id]['register_order'],
                                        comment=comment)
@@ -440,7 +486,7 @@ async def press_button_pass_comment(callback: CallbackQuery, state: FSMContext, 
                                        f'Ваша команда Шаверград!')
     list_manager = select_all_manager('manager')
     list_cook = select_all_manager('cook')
-
+    info_user = select_row_table_users(callback.message.chat.id)
     text_manager = f'Информация о заказе:\nНаименование блюда x количество порций'
 
     text_cook = f'Информация о заказе:\nНаименование блюда x количество порций'
@@ -467,7 +513,11 @@ async def press_button_pass_comment(callback: CallbackQuery, state: FSMContext, 
             await bot.send_message(chat_id=id_telegram_manager,
                                    text=f'Номер заказа: {idorder[0]}\n'
                                         f'{name}\n\n'
-                                        f'Сумма заказа: {total} руб.')
+                                        f'Сумма заказа: {total} руб.\n\n'
+                                        f'Комментарий: {comment}\n'
+                                        f'Адрес доставки: {user_dict[callback.message.chat.id]["adress"]}\n'
+                                        f'Имя:{info_user[2]}\n'
+                                        f'Телефон: {info_user[3]}')
         else:
             await bot.send_message(chat_id=config.tg_bot.admin_ids,
                                    text=f"Сообщение пользователю c id: {id_telegram_manager} не доставлено")
@@ -481,6 +531,7 @@ async def press_button_pass_comment(callback: CallbackQuery, state: FSMContext, 
 async def get_comment_order(message: Message, state: FSMContext, bot: Bot):
     logging.info(f'get_comment_order: {message.chat.id}')
     comment = message.text
+    await state.update_data(comment=comment)
     update_status_table_number_comment(telegram_id=message.chat.id,
                                        id_order=user_dict[message.chat.id]['register_order'],
                                        comment=comment)
@@ -490,7 +541,7 @@ async def get_comment_order(message: Message, state: FSMContext, bot: Bot):
                               f'Ваша команда Шаверград!')
     list_manager = select_all_manager('manager')
     list_cook = select_all_manager('cook')
-
+    info_user = select_row_table_users(message.chat.id)
     text_manager = f'Информация о заказе:\nНаименование блюда x количество порций'
 
     text_cook = f'Информация о заказе:\nНаименование блюда x количество порций'
@@ -513,9 +564,15 @@ async def get_comment_order(message: Message, state: FSMContext, bot: Bot):
                 name = name + f'{i + 1}. {info_dish[1]}: {info_dish[2]} x {info_order[4]} = {info_dish[2] * info_order[4]}руб.\n'
                 total += info_dish[2] * info_order[4]
             print(id_telegram_manager)
+            idorder = select_id_number_order(order_id)
             await bot.send_message(chat_id=id_telegram_manager,
-                                   text=f'{name}\n\n'
-                                        f'Сумма заказа: {total} руб.')
+                                   text=f'Номер заказа: {idorder[0]}\n'
+                                        f'{name}\n\n'
+                                        f'Сумма заказа: {total} руб.\n\n'
+                                        f'Комментарий: {comment}\n'
+                                        f'Адрес доставки: {user_dict[message.chat.id]["adress"]}\n'
+                                        f'Имя:{info_user[2]}\n'
+                                        f'Телефон: {info_user[3]}')
         else:
             await bot.send_message(chat_id=config.tg_bot.admin_ids,
                                    text=f"Сообщение пользователю c id: {id_telegram_manager} не доставлено")

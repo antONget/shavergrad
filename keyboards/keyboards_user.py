@@ -46,11 +46,20 @@ def keyboards_list_category(list_category):
     return kb_builder.as_markup(resize_keyboard=True)
 
 
-def keyboard_paydish(cost, id_dish):
+def keyboard_paydish(cost, id_dish, list_id_dish_category):
     logging.info(f'keyboard_confirm_phone')
-    button_1 = InlineKeyboardButton(text=f'Заказать за {cost} руб.', callback_data=f'paydish_{id_dish}')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
-    return keyboard
+    buttons = []
+    buttons.append(InlineKeyboardButton(text=f'Заказать за {cost} руб.', callback_data=f'paydish_{id_dish}'))
+    # buttons_dish = []
+    kb_builder = InlineKeyboardBuilder()
+    for info_dish in list_id_dish_category:
+        i, name_dish = info_dish
+        if not i == id_dish:
+            button = InlineKeyboardButton(text=f'{name_dish}', callback_data=f'showdish_{i}')
+            buttons.append(button)
+
+    kb_builder.row(*buttons, width=1)
+    return kb_builder.as_markup()
 
 
 def keyboards_list_category_nav(list_category):
