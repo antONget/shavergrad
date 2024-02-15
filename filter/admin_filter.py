@@ -4,6 +4,8 @@ from config_data.config import load_config, Config
 import logging
 
 config : Config = load_config()
+
+
 def chek_manager(telegram_id):
     logging.info('chek_manager')
     list_manager = select_all_manager('manager')
@@ -17,6 +19,7 @@ def filter_category(category):
     list_category = select_all_category_table_dish()
     logging.info(f'filter_category: {category} {category in list_category}')
     return category in list_category
+
 
 def comand_user_admin(message: Message):
     logging.info('comand_user_admin')
