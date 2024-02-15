@@ -9,8 +9,8 @@ def chek_manager(telegram_id):
     list_manager = select_all_manager('manager')
     print(list_manager, config.tg_bot.admin_ids, ':',telegram_id)
 
-    print(telegram_id in list_manager or telegram_id == config.tg_bot.admin_ids)
-    return (telegram_id in list_manager or telegram_id == config.tg_bot.admin_ids)
+    print(str(telegram_id) in list_manager or telegram_id == config.tg_bot.admin_ids)
+    return (str(telegram_id) in list_manager or telegram_id == config.tg_bot.admin_ids)
 
 
 def filter_category(category):
@@ -20,6 +20,8 @@ def filter_category(category):
 
 def comand_user_admin(message: Message):
     logging.info('comand_user_admin')
-    if chek_manager(message.chat.id) or str(message.chat.id) == str(config.tg_bot.admin_ids):
+    if chek_manager(message.chat.id) and message.text == '/user':
         print(message.text)
-        return message.text == '/user'
+        return True
+    else:
+        return False
