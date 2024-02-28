@@ -21,6 +21,7 @@ from keyboards.keyboards_user import keyboard_confirm_phone, keyboards_get_phone
     keyboards_list_category, keyboard_paydish, keyboards_list_category_nav, keyboard_select_portion, \
     keyboard_continue_register, keyboard_confirm_register, keyboard_change_order, keyboard_pass_comment
 from filter.admin_filter import filter_category, comand_user_admin
+from services.call_phone import call_to_phone
 #
 router = Router()
 config: Config = load_config()
@@ -539,11 +540,12 @@ async def get_comment_order(message: Message, state: FSMContext, bot: Bot):
                               f'Спасибо, что выбрали нас.\n\n'
                               f'Вы всегда можете связаться с нами по тел. +79112972946\n\n'
                               f'Ваша команда Шаверград!')
+
     list_manager = select_all_manager('manager')
     list_cook = select_all_manager('cook')
     info_user = select_row_table_users(message.chat.id)
     text_manager = f'Информация о заказе:\nНаименование блюда x количество порций'
-
+    call_to_phone()
     text_cook = f'Информация о заказе:\nНаименование блюда x количество порций'
 
     for id_telegram_cook in list_cook:
