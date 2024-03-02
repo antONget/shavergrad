@@ -118,3 +118,9 @@ def keyboard_pass_comment():
     button_1 = InlineKeyboardButton(text=f'Пропустить', callback_data=f'pass_comment')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
     return keyboard
+
+def keyboard_get_location():
+    logging.info(f'keyboard_pass_comment')
+    button_1 = KeyboardButton(text="Отправить свою геолокацию", request_location=True)
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1]], resize_keyboard=True)
+    return keyboard

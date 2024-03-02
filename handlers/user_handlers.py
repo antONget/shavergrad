@@ -3,7 +3,7 @@ import logging
 import asyncio
 import datetime
 import requests
-from services.geolocation import check_adress
+from services.geolocation import check_adress, check_adress_lon_alt
 import re
 from aiogram.filters import CommandStart, and_f, or_f, StateFilter
 from aiogram.types import Message, CallbackQuery
@@ -19,7 +19,7 @@ from module.database import create_table_user, select_row_table_users, insert_da
     update_phone_users, delete_table_orders
 from keyboards.keyboards_user import keyboard_confirm_phone, keyboards_get_phone, keyboards_main_menu,\
     keyboards_list_category, keyboard_paydish, keyboards_list_category_nav, keyboard_select_portion, \
-    keyboard_continue_register, keyboard_confirm_register, keyboard_change_order, keyboard_pass_comment
+    keyboard_continue_register, keyboard_confirm_register, keyboard_change_order, keyboard_pass_comment, keyboard_get_location
 from filter.admin_filter import filter_category, comand_user_admin
 from services.call_phone import call_to_phone
 #
@@ -69,7 +69,7 @@ async def process_start_command_user(message: Message, state: FSMContext) -> Non
     await asyncio.sleep(3)
     await message.answer(text="Вы можете:\n"
                               "🍽️ прийти к нам в кафе по адресу: Вишерская улица, 2 (график работы: 10:00-23:00)\n"
-                              "🤳или заказать доставку в этом боте с 10:00 до 22:45.")
+                              "🤳или заказать доставку в этом боте с 10:30 до 22:30.")
     row_user = select_row_table_users(message.chat.id)
     # print(row_user)
     if not row_user:
@@ -165,7 +165,7 @@ async def press_button_promotion(message: Message):
 async def press_button_menu(message: Message):
     list_category = select_all_category_table_dish()
     keyboard = keyboards_list_category(list_category)
-    await message.answer(text=f"Минимальная сумма заказа: <b>1700 руб.</b>\n"
+    await message.answer(text=f"Минимальная сумма заказа: <b>600 руб.</b>\n"
                               f"Выберите блюдо:",
                          reply_markup=keyboard)
 #
@@ -389,7 +389,7 @@ async def press_button_order_dish(callback: CallbackQuery, state: FSMContext):
                             dish_id=user_dict[callback.message.chat.id]['id_dish'],
                             order_id=user_dict[callback.message.chat.id]['id_order'],
                             portion=user_dict[callback.message.chat.id]['portion'])
-        await callback.message.answer(text='Блюдо добавлено в карзину. Желаете что-то ещё добавить в свой заказ?',
+        await callback.message.answer(text='Блюдо добавлено в корзину. Желаете что-то ещё добавить в свой заказ?',
                                       reply_markup=keyboard_continue_register())
     else:
         list_category = select_all_category_table_dish()
@@ -419,8 +419,8 @@ async def press_button_continue_order(callback: CallbackQuery, state: FSMContext
 @router.callback_query(F.data == 'register_order')
 async def press_button_register_order(callback: CallbackQuery):
     logging.info(f'press_button_register_order: {callback.message.chat.id}')
-    print('press_button_register_order')
     last_number_orders = select_row_table_number_order(callback.message.chat.id)[-1]
+    print(last_number_orders)
     if last_number_orders[-1] == 0:
         order_id = last_number_orders[1]
         print('order_id', order_id)
@@ -432,17 +432,53 @@ async def press_button_register_order(callback: CallbackQuery):
             name = name+f'{i+1}. {info_dish[1]}: {info_dish[2]} x {info_order[4]} = {info_dish[2] * info_order[4]} руб.\n'
             total += info_dish[2]*info_order[4]
         idorder = select_id_number_order(order_id)
-        await callback.message.answer(text=f'Номер заказа: {idorder[0]}\n'
-                                           f'{name}\n\n'
-                                           f'Сумма заказа: {total} руб.',
-                                      reply_markup=keyboard_confirm_register(order_id))
+        if total > 600:
+            await callback.message.answer(text=f'Номер заказа: {idorder[0]}\n'
+                                               f'{name}\n\n'
+                                               f'Сумма заказа: {total} руб.',
+                                          reply_markup=keyboard_confirm_register(order_id))
+        else:
+            await callback.message.answer(text=f'Номер заказа: {idorder[0]}\n'
+                                               f'{name}\n\n'
+                                               f'Сумма заказа: {total} руб.'
+                                               f'\n\n'
+                                               f'Минимальная сумма заказа 600 руб.')
 #
+
+async def press_button_register_order1(callback: CallbackQuery):
+    logging.info(f'press_button_register_order1: {callback.message.chat.id}')
+    last_number_orders = select_row_table_number_order(callback.message.chat.id)[-1]
+    print(last_number_orders)
+    if last_number_orders[-1] == 0:
+        order_id = last_number_orders[1]
+        print('order_id', order_id)
+        info_dish_last_order = select_data_table_orders_to_order_id(order_id=order_id)
+        name = ''
+        total = 0
+        for i, info_order in enumerate(info_dish_last_order):
+            info_dish = select_row_id_dish(info_order[3])
+            name = name+f'{i+1}. {info_dish[1]}: {info_dish[2]} x {info_order[4]} = {info_dish[2] * info_order[4]} руб.\n'
+            total += info_dish[2]*info_order[4]
+        idorder = select_id_number_order(order_id)
+        if total > 600:
+            await callback.message.answer(text=f'Номер заказа: {idorder[0]}\n'
+                                               f'{name}\n\n'
+                                               f'Сумма заказа: {total} руб.',
+                                          reply_markup=keyboard_confirm_register(order_id))
+        else:
+            await callback.message.answer(text=f'Номер заказа: {idorder[0]}\n'
+                                               f'{name}\n\n'
+                                               f'Сумма заказа: {total} руб.'
+                                               f'\n\n'
+                                               f'Минимальная сумма заказа 600 руб.')
+
 #
 @router.callback_query(F.data.startswith('registerdone'))
 async def press_button_register_all_done(callback: CallbackQuery, state: FSMContext):
     logging.info(f'press_button_register_all_done: {callback.message.chat.id}')
     print('press_button_register_all_done')
     id_order = callback.data.split('.')[1]
+    # if id_order
     print('id_order-done', id_order)
     await state.update_data(register_order=id_order)
     update_status_table_number_id_order(status_order=1,
@@ -450,9 +486,23 @@ async def press_button_register_all_done(callback: CallbackQuery, state: FSMCont
                                         id_order=id_order)
     await callback.message.answer_photo(photo="AgACAgIAAxkBAAIBN2XIkzZGPflWKE9lVJfjds9WZYihAAJO2zEbczhISsV6voCB0e5GAQADAgADeQADNAQ",
                                         caption=f'Наша зона доставки.'
-                                                f'Укажите ваш адрес (улица, номер дома и номер квартиры):')
+                                                f'Укажите ваш адрес (улица, номер дома и номер квартиры):',
+                                        reply_markup=keyboard_get_location())
 
-    await state.set_state(Form_user.adress_user)
+
+@router.message(F.location)
+async def process_get_location(message: Message, state: FSMContext):
+    logging.info(f'process_get_location: {message.chat.id}')
+    lat = message.location.latitude
+    lon = message.location.longitude
+    if check_adress_lon_alt(lon=lon, lat=lat):
+        await message.answer(text=f'Укажите ваш адрес (улица, номер дома и номер квартиры):',
+                             reply_markup=keyboards_main_menu())
+        await state.set_state(Form_user.adress_user)
+    else:
+        await message.answer(text=f'Мы доставляем только в пределах указанной зоны',
+                             reply_markup=keyboards_main_menu())
+
 #
 #
 @router.message(F.text, StateFilter(Form_user.adress_user))
@@ -584,7 +634,6 @@ async def get_comment_order(message: Message, state: FSMContext, bot: Bot):
 @router.callback_query(F.data.startswith('registerchange'))
 async def press_button_register_change(callback: CallbackQuery, state: FSMContext):
     logging.info(f'press_button_register_change: {callback.message.chat.id}')
-    print('press_button_register_change')
     id_order = callback.data.split('.')[1]
     await state.update_data(register_order=id_order)
     print("id_order-change", id_order)
@@ -613,7 +662,7 @@ async def press_button_register_change(callback: CallbackQuery, state: FSMContex
 async def press_button_done_change(callback: CallbackQuery, state: FSMContext):
     logging.info(f'press_button_register_change: {callback.message.chat.id}')
     print('press_button_register_change')
-    await press_button_register_order(callback)
+    await press_button_register_order1(callback)
 
 
 @router.callback_query(or_f(F.data == 'back_dish', F.data == 'forward_dish'))
@@ -715,7 +764,9 @@ async def press_button_done_change(callback: CallbackQuery, state: FSMContext):
 
 @router.message(F.text == '🛒 Корзина')
 async def press_button_cart(message: Message):
-    print("press_button_cart", select_row_table_number_order(message.chat.id))
+    logging.info(f"press_button_cart, {len(select_row_table_number_order(message.chat.id))}")
+    rrr = select_row_table_number_order(message.chat.id)
+    print(rrr)
     if select_row_table_number_order(message.chat.id):
         last_number_orders=select_row_table_number_order(message.chat.id)[-1]
         order_id = last_number_orders[1]
@@ -728,9 +779,16 @@ async def press_button_cart(message: Message):
             name = name + f'{i + 1}. {info_dish[1]}: {info_dish[2]} x {info_order[4]} = {info_dish[2] * info_order[4]}руб.\n'
             total += info_dish[2] * info_order[4]
         idorder = select_id_number_order(order_id)
-        await message.answer(text=f'Номер заказа: {idorder[0]}\n'
-                                  f'{name}\n\n'
-                                  f'Сумма заказа: {total} руб.',
-                             reply_markup=keyboard_confirm_register(order_id))
+        if total > 600:
+            await message.answer(text=f'Номер заказа: {idorder[0]}\n'
+                                      f'{name}\n\n'
+                                      f'Сумма заказа: {total} руб.',
+                                 reply_markup=keyboard_confirm_register(order_id))
+        else:
+            await message.answer(text=f'Номер заказа: {idorder[0]}\n'
+                                      f'{name}\n\n'
+                                      f'Сумма заказа: {total} руб.'
+                                      f'\n\n'
+                                      f'Минимальная сумма заказа 600 руб.')
     else:
         await message.answer(text='Вы еще ничего не добавили в корзину. Выберите раздел для осуществления заказа!')

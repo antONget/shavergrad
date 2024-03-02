@@ -375,12 +375,13 @@ def insert_data_table_number_order(id_order, telegram_id, status_order):
             cursor.execute(postgres_insert_query, record_to_insert)
         connection.close()
 def select_row_table_number_order(telegram_id):
-    logging.info(f'select_row_table_users')
+    logging.info(f'select_row_table_number_order, {telegram_id}')
     connection = connect_db(config)
     try:
         with connection.cursor() as cursor:
-            postgres_insert_query = """SELECT * FROM number_order WHERE telegram_id = %s"""
+            postgres_insert_query = """SELECT * FROM number_order WHERE telegram_id = %s ORDER BY id"""
             cursor.execute(postgres_insert_query, (int(telegram_id),))
+            # print(cursor.fetchall())
             return cursor.fetchall()
     except:
         pass

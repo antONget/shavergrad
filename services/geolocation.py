@@ -46,6 +46,10 @@ def fetch_coordinates(adress):
 def check_adress(adress):
     point = fetch_coordinates(adress)
     return point_into_poligon(point)
+
+def check_adress_lon_alt(lon, lat):
+    point = Point(lon, lat)
+    return point_into_poligon(point)
 # apikey = '89a291dc-67e8-4eb7-a6c1-d7e107279f4b'  # ваш ключ
 #
 # coords = fetch_coordinates(apikey, "Внуково")
