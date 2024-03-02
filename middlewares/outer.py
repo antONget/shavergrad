@@ -26,7 +26,7 @@ class FirstOuterMiddleware(BaseMiddleware):
         data: Dict[str, Any]
     ) -> Any:
         print('---')
-        if not is_time_between(time(10-3, 30), time(23-3, 30)):
+        if not is_time_between(time(10-3, 30), time(21-3, 30)):
             text = 'Доставка доступна с 10:30 до 21:30, заходите в часы работы будем рады вас накормить'
             try:
                 await event.answer(text=text)
