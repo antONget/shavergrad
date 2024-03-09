@@ -22,6 +22,7 @@ from keyboards.keyboards_user import keyboard_confirm_phone, keyboards_get_phone
     keyboard_continue_register, keyboard_confirm_register, keyboard_change_order, keyboard_pass_comment, keyboard_get_location
 from filter.admin_filter import filter_category, comand_user_admin
 from services.call_phone import call_to_phone
+from services.zvonok_ru import create_call
 #
 router = Router()
 config: Config = load_config()
@@ -572,7 +573,7 @@ async def press_button_pass_comment(callback: CallbackQuery, state: FSMContext, 
         else:
             await bot.send_message(chat_id=config.tg_bot.admin_ids,
                                    text=f"Сообщение пользователю c id: {id_telegram_manager} не доставлено")
-
+    create_call(campaign_id=1331539899, phonenumber='+79112972946', text='Поступил новый заказ', speaker='Tatyana')
     await state.set_state(default_state)
     update_status_table_number_id_order(status_order=2,
                                         telegram_id=callback.message.chat.id,
@@ -595,7 +596,7 @@ async def get_comment_order(message: Message, state: FSMContext, bot: Bot):
     list_cook = select_all_manager('cook')
     info_user = select_row_table_users(message.chat.id)
     text_manager = f'Информация о заказе:\nНаименование блюда x количество порций'
-    call_to_phone()
+    # call_to_phone()
     text_cook = f'Информация о заказе:\nНаименование блюда x количество порций'
 
     for id_telegram_cook in list_cook:
@@ -604,6 +605,7 @@ async def get_comment_order(message: Message, state: FSMContext, bot: Bot):
 
     for id_telegram_manager in list_manager:
         user = get_telegram_user(id_telegram_manager, config.tg_bot.token)
+        print(user)
         if 'result' in user:
             last_number_orders = select_row_table_number_order(message.chat.id)[-1]
             order_id = last_number_orders[1]
@@ -628,6 +630,7 @@ async def get_comment_order(message: Message, state: FSMContext, bot: Bot):
         else:
             await bot.send_message(chat_id=config.tg_bot.admin_ids,
                                    text=f"Сообщение пользователю c id: {id_telegram_manager} не доставлено")
+    create_call(campaign_id=1331539899, phonenumber='+79112972946', text='Поступил новый заказ', speaker='Tatyana')
     await state.set_state(default_state)
 
 # ИЗМЕНЕНИЕ СОЗДАННОГО ЗАКАЗА
