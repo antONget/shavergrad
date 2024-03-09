@@ -5,6 +5,7 @@ from aiogram import Bot, Dispatcher
 from config_data.config import Config, load_config
 from handlers import admin_handlers_menu_add, user_handlers, admin_handlers, admin_handlers_menu_edit,\
     admin_handlers_menu_delete, admin_handlers_promotion, other_handlers
+from handlers.user_handlers import router
 from middlewares.outer import FirstOuterMiddleware
 
 
@@ -47,8 +48,8 @@ async def main():
     dp.include_router(other_handlers.router)
 
     # Здесь будем регистрировать миддлвари
-    dp.message.middleware(FirstOuterMiddleware())
-    dp.callback_query.middleware(FirstOuterMiddleware())
+    router.message.middleware(FirstOuterMiddleware())
+    router.callback_query.middleware(FirstOuterMiddleware())
 
     # Пропускаем накопившиеся update и запускаем polling
     await bot.delete_webhook(drop_pending_updates=True)
