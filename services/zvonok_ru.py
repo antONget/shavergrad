@@ -23,7 +23,7 @@ def create_call(campaign_id, phonenumber, text=None, speaker='Tatyana'):
     }, timeout=CALLTOOLS_TIMEOUT)
     ret = resp.json()
     print(ret)
-    if ret['status'] == 'error':
+    if 'status' in ret.keys() and ret['status'] == 'error':
         raise CallToolsException(ret['data'])
     return ret
 
